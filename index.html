@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Журнал">
+<meta name="theme-color" content="#1c1814">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<title>Судовой журнал</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Underdog&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1c1814;--card:#26201b;--card2:#2e2721;--line:#453a30;--ink:#e8dcc4;--muted:#a3957f;--dim:#6f6353;
+  --gold:#c9a45c;--rust:#b0553c;--moss:#8aa35f;--slate:#7f9db3;--plum:#9a86b3;--amber:#cf8a45;--rose:#b87a8e;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+:root[data-theme="light"]{}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;min-height:100%;color:var(--ink);font:16px/1.45 "PT Sans",system-ui,-apple-system,sans-serif;-webkit-tap-highlight-color:transparent;
+  background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .9 0 0 0 0 .85 0 0 0 0 .75 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+.disp{font-family:"Underdog","PT Sans",serif;letter-spacing:.01em}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.wrap{max-width:560px;margin:0 auto;padding:14px 16px 96px}
+svg.ic{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough);flex-shrink:0}
+.rough{filter:url(#rough)}
+
+/* header */
+.top{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.hero{display:flex;gap:14px;align-items:center;margin:10px 0 8px}
+.emblem{width:62px;height:62px;color:var(--gold)}
+.emblem svg{width:62px;height:62px}
+.rankbox{flex:1;min-width:0}
+.rank{font-size:34px;line-height:1.05;color:var(--gold)}
+.sub{font-size:13px;color:var(--muted)}
+.coins{display:flex;align-items:center;gap:6px;color:var(--gold);font-size:18px}
+.coins svg{width:24px;height:24px}
+.xpbar{position:relative;height:14px;border:1.5px solid var(--line);background:#15120f;border-radius:3px;overflow:hidden}
+.xpbar .f{position:absolute;inset:0 auto 0 0;background:repeating-linear-gradient(135deg,var(--gold) 0 6px,#b08e4c 6px 12px);transition:width .5s ease}
+.xpline{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:4px}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:14px 0 4px}
+.st{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;background:var(--card);border:1px solid var(--line);border-radius:6px}
+.st .n{font-size:11px;color:var(--muted);text-align:center;line-height:1.1}
+.st .lv{font-size:13px}
+.st .b{width:80%;height:4px;background:#15120f;border-radius:2px;overflow:hidden}
+.st .b i{display:block;height:100%}
+.st.locked{opacity:.35}
+.st.locked svg{color:var(--dim)!important}
+
+h2{font-size:21px;font-weight:400;margin:22px 0 8px;display:flex;justify-content:space-between;align-items:baseline;color:var(--ink)}
+h2 small{font-family:"PT Sans",sans-serif;font-size:13px;color:var(--muted)}
+.storm{padding:10px 12px;border:1px dashed var(--line);border-radius:6px;font-size:14px;color:var(--muted);margin:10px 0}
+.storm.bad{border-color:var(--rust);color:#e4927b}
+.storm.good{border-color:var(--moss);color:#b7cc8e}
+
+/* quests */
+.q{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:10px 12px;margin-bottom:6px;background:var(--card);border:1px solid var(--line);border-radius:6px;text-align:left}
+.q .box{width:24px;height:24px;border:2px solid var(--muted);border-radius:4px;display:grid;place-items:center;flex-shrink:0}
+.q .box svg{width:16px;height:16px;stroke:var(--bg);stroke-width:3;fill:none}
+.q.done .box{background:var(--moss);border-color:var(--moss)}
+.q.done .t b{text-decoration:line-through;opacity:.55;font-weight:400}
+.q .t{flex:1;display:flex;flex-direction:column}
+.q .t b{font-weight:400;font-size:15px}
+.q .t span{font-size:11px;color:var(--muted)}
+.q .xp{color:var(--gold);font-weight:700;font-size:14px}
+.q .qi{width:22px;height:22px;opacity:.8}
+.q:disabled{opacity:.45;cursor:default}
+.crow{display:flex;gap:6px}.crow .q{flex:1}
+.del{width:46px;min-height:52px;margin-bottom:6px;background:none;border:1px solid var(--line);border-radius:6px;color:var(--muted)}
+.addrow{display:flex;gap:6px;flex-wrap:wrap}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+.addrow input{flex:1 1 200px;min-width:0}
+textarea{width:100%;min-height:76px;resize:vertical}
+.btn{min-height:44px;padding:8px 14px;border:1.5px solid var(--ink);background:none;border-radius:6px}
+.btn.gold{border-color:var(--gold);color:var(--gold)}
+.btn.warn{border-color:var(--rust);color:#e4927b}
+.btn:disabled{opacity:.4;cursor:default}
+.hint{font-size:13px;color:var(--muted);margin:-2px 0 10px}
+
+/* streaks */
+.hgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.hc{padding:10px 8px;background:var(--card);border:1px solid var(--line);border-radius:6px;display:flex;flex-direction:column;gap:2px;text-align:left}
+.hc .d{font-size:26px;line-height:1;color:var(--gold)}
+.hc .nm{font-size:12px;line-height:1.2}
+.hc .nt{font-size:10px;color:var(--muted)}
+.hc svg{width:22px;height:22px;color:var(--muted)}
+.hfull{padding:14px;background:var(--card);border:1px solid var(--line);border-radius:6px;margin-bottom:10px}
+.hfull .row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.hfull .big{font-size:34px;color:var(--gold);line-height:1}
+.marks{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0}
+.marks span{font-size:11px;padding:2px 8px;border:1px solid var(--line);border-radius:999px;color:var(--muted)}
+.marks span.got{border-color:var(--gold);color:var(--gold)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{min-height:40px;padding:6px 12px;border:1px solid var(--line);background:var(--card);border-radius:999px;font-size:14px;color:var(--muted)}
+.chip.on{border-color:var(--moss);color:#b7cc8e}
+
+/* shop, path */
+.shop{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px;background:var(--card);border:1px solid var(--line);border-radius:6px;margin-bottom:6px}
+.rk{padding:10px 0 10px 14px;border-left:2px solid var(--line)}
+.rk.got{border-color:var(--gold)}
+.rk.cur{background:var(--card);border-radius:0 6px 6px 0}
+.rk h3{margin:0;font-weight:400;font-size:17px}
+.rk.got h3{color:var(--gold)}
+.rk ul{margin:4px 0 0;padding-left:18px;font-size:13px;color:var(--muted)}
+.statrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.statrow .bb{flex:1;height:6px;background:#15120f;border-radius:3px;overflow:hidden}
+.statrow .bb i{display:block;height:100%}
+
+/* nav */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:5;background:rgba(22,19,16,.96);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
+nav button{min-height:56px;padding:0;background:none;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;color:var(--dim)}
+nav button svg{width:22px;height:22px}
+nav button[aria-selected="true"]{color:var(--gold)}
+.fleetsum{display:flex;gap:10px;margin:6px 0 12px}
+.fleetsum div{flex:1;padding:10px;background:var(--card);border:1px solid var(--line);border-radius:6px}
+.fleetsum b{display:block;font-family:"Underdog",serif;font-weight:400;font-size:22px;color:var(--gold)}
+.ship{padding:12px;background:var(--card);border:1px solid var(--line);border-radius:6px;margin-bottom:10px}
+.ship .art{color:var(--ink);display:flex;justify-content:center}
+.ship .art svg{width:100%;max-width:260px;height:auto}
+.ship.locked{opacity:.45}.ship.locked .art{color:var(--dim)}
+.ship .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ship .nm{font-size:20px}
+.cargo{height:10px;background:#15120f;border:1px solid var(--line);border-radius:3px;overflow:hidden;margin:8px 0 4px}
+.cargo i{display:block;height:100%;background:repeating-linear-gradient(135deg,var(--moss) 0 6px,#728a4c 6px 12px)}
+.status{font-size:13px;margin:4px 0 8px}
+.status.ok{color:#b7cc8e}.status.bad{color:#e4927b}.status.full{color:var(--gold)}
+.chest{display:flex;gap:14px;align-items:center;padding:14px;background:var(--card2);border:1.5px solid var(--gold);border-radius:6px;margin-bottom:8px}
+.chest svg{width:56px;height:56px;color:var(--gold)}
+.chest.shake svg{animation:shake .6s ease}
+@keyframes shake{0%,100%{transform:rotate(0)}20%{transform:rotate(-12deg)}40%{transform:rotate(10deg)}60%{transform:rotate(-8deg)}80%{transform:rotate(5deg)}}
+.loot{padding:12px;border:1px dashed var(--gold);border-radius:6px;margin-bottom:10px;color:var(--gold);font-size:15px}
+.gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.gcard{padding:8px;background:var(--card);border:1px solid var(--line);border-radius:6px;color:var(--ink)}
+.gcard svg{width:100%;height:auto;display:block}
+.gcard .gn{font-size:15px;margin-top:2px}
+.gcard.own{border-color:var(--gold)}.gcard.own .gn{color:var(--gold)}
+.gcard.far{color:var(--dim)}
+.opt{display:block;width:100%;text-align:left;min-height:50px;padding:10px 14px;margin-bottom:6px;background:var(--card);border:1px solid var(--line);border-radius:6px;font-size:16px}
+.opt.right{border-color:var(--moss);color:#b7cc8e}.opt.wrong{border-color:var(--rust);color:#e4927b}
+.qcard{padding:16px;background:var(--card2);border:1px solid var(--line);border-radius:6px;margin-bottom:10px}
+.qcard .qp{font-size:20px;margin:6px 0 2px}
+.ship.cur{border-color:var(--gold)}
+.hidden{display:none!important}
+.toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translate(-50%,160%);background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:6px;max-width:92vw;z-index:10;font-size:14px;transition:transform .35s ease}
+.toast.show{transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="rough" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="1.3"/></filter>
+    <symbol id="i-sila" viewBox="0 0 24 24"><path d="M4 20c0-3 .5-5 2-7l2-3.5c.6-1.5.4-3 1.6-3.8 1.3-.8 3 0 3.2 1.4l-1.4 2.6c1.8-.4 3.7-.1 5.1 1 2 1.6 2.3 4.6.6 6.6-1.3 1.6-3.4 2.4-5.4 2.3z"/><path d="M11 13c1-.8 2.4-1 3.6-.6"/><path d="M6.5 15.5c.8.3 1.3 1 1.5 1.8"/></symbol>
+    <symbol id="i-intel" viewBox="0 0 24 24"><path d="M12 5.5c-1.2-2-4.6-1.8-5.2.6-2 .1-3 2.3-1.8 3.8-1.6 1.2-1.1 3.8.8 4.3-.3 2 1.8 3.4 3.5 2.4.8 1.6 2.4 1.9 2.7.2"/><path d="M12 5.5c1.2-2 4.6-1.8 5.2.6 2 .1 3 2.3 1.8 3.8 1.6 1.2 1.1 3.8-.8 4.3.3 2-1.8 3.4-3.5 2.4-.8 1.6-2.4 1.9-2.7.2"/><path d="M12 5.5V20"/><path d="M8.5 9.5l1.5 1M15.5 9.5l-1.5 1M8 13.5h2M16 13.5h-2"/></symbol>
+    <symbol id="i-duh" viewBox="0 0 24 24"><path d="M8 4h8M9 4v2M15 4v2"/><rect x="6.5" y="6" width="11" height="13" rx="2"/><path d="M6 19h12v2H6z"/><path d="M12 9c1.8 2 2.6 3.2 2.6 4.8a2.6 2.6 0 0 1-5.2 0c0-1 .5-1.7 1-2.2.1.9.6 1.4 1.1 1.4 0-1.3-.4-2.3.5-4z"/></symbol>
+    <symbol id="i-disc" viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7"/><path d="M12 6.5V4M10 3h4"/><path d="M12 13.5V9.5M12 13.5l2.8 1.8"/><path d="M17.5 7.5l1.3-1.3"/></symbol>
+    <symbol id="i-svyaz" viewBox="0 0 24 24"><path d="M2.5 11l3.5-3.5 3 1.2 2.5-1.5 3 .3 7 5-2.4 2.6"/><path d="M6 7.5l-3.5 5 5.8 5.2c.8.7 1.9.6 2.5-.2"/><path d="M11.5 7.2L9 10c-.6.8.3 2 1.3 1.6l2.6-1.3 5 4.3c.7.6.3 1.8-.6 1.8"/><path d="M10.8 17.5c.8.7 1.9.6 2.4-.3M13.2 17.2c.8.6 1.8.4 2.3-.4M15.5 16.8c.7.4 1.6.2 1.8-.5"/></symbol>
+    <symbol id="i-prikl" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/><path d="M12 6.5l2.6 5.5-2.6 5.5-2.6-5.5z"/><path d="M12 6.5V12" /></symbol>
+    <symbol id="i-master" viewBox="0 0 24 24"><path d="M10.3 3h3.4l.5 2.4 1.9.8 2-1.4 2.4 2.4-1.4 2 .8 1.9 2.4.5v3.4l-2.4.5-.8 1.9 1.4 2-2.4 2.4-2-1.4-1.9.8-.5 2.4h-3.4l-.5-2.4-1.9-.8-2 1.4-2.4-2.4 1.4-2-.8-1.9L3 13.7v-3.4l2.4-.5.8-1.9-1.4-2 2.4-2.4 2 1.4 1.9-.8z"/><circle cx="12" cy="12" r="3.2"/></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="6.5" stroke-dasharray="1.5 1.5"/><path d="M12 8v8M10 9.5h4M9 13.5c.5 1.6 1.6 2.5 3 2.5s2.5-.9 3-2.5"/><circle cx="12" cy="7.6" r=".9"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/><path d="M12 14.5v2.5"/><circle cx="12" cy="14.2" r="1"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2"/><path d="M10.5 5h3"/><path d="M8.5 9l3 2.5-2 2 4 3.5 1.5-2"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M15.5 3.5A8.5 8.5 0 1 0 20.5 16 7 7 0 0 1 15.5 3.5z"/><path d="M18 5.5l.5 1 1 .5-1 .5-.5 1-.5-1-1-.5 1-.5z"/></symbol>
+    <symbol id="i-bottle" viewBox="0 0 24 24"><path d="M10 2.5h4v4l1.5 2.5v11.5h-7V9L10 6.5z"/><path d="M8.5 13h7"/></symbol>
+    <symbol id="i-dice" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="15" r="1"/><circle cx="15" cy="9" r="1"/><circle cx="9" cy="15" r="1"/></symbol>
+    <symbol id="i-can" viewBox="0 0 24 24"><path d="M8 3.5h8l-.5 2 .5 1v13l-1 1.5H9l-1-1.5v-13l.5-1z"/><path d="M11 9l-1.5 4h3L11 17"/></symbol>
+    <symbol id="i-burger" viewBox="0 0 24 24"><path d="M4 11a8 5 0 0 1 16 0z"/><path d="M3.5 14h17M4 17h16a0 0 0 0 1 0 0 3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z"/></symbol>
+    <symbol id="i-wheel" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2"/><path d="M12 2v8M12 14v8M2 12h8M14 12h8M4.9 4.9l5.7 5.7M13.4 13.4l5.7 5.7M19.1 4.9l-5.7 5.7M10.6 13.4l-5.7 5.7"/></symbol>
+    <symbol id="i-today" viewBox="0 0 24 24"><path d="M4 5h16v15H4z"/><path d="M4 9h16M8 3v4M16 3v4"/><path d="M8.5 14l2.2 2.2 4.8-4.7"/></symbol>
+    <symbol id="i-chain" viewBox="0 0 24 24"><rect x="3" y="8" width="9" height="8" rx="4"/><rect x="12" y="8" width="9" height="8" rx="4"/></symbol>
+    <symbol id="i-chest" viewBox="0 0 24 24"><path d="M3.5 10a4 4 0 0 1 4-4h9a4 4 0 0 1 4 4v10h-17z"/><path d="M3.5 12h17"/><rect x="10.5" y="10.5" width="3" height="4" rx=".5"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="M3 6l6-2.5 6 2.5 6-2.5v14.5l-6 2.5-6-2.5-6 2.5z"/><path d="M9 3.5V18M15 6v14.5"/></symbol>
+    <symbol id="i-gear2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></symbol>
+    <symbol id="i-ship" viewBox="0 0 24 24"><path d="M3 15h18l-2.5 5h-13z"/><path d="M12 3v12"/><path d="M12 4l6 9h-6"/><path d="M11 6l-5 7h5"/></symbol>
+    <symbol id="i-compassn" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 5.5l2.4 6.5L12 18.5 9.6 12z"/><path d="M12 3v1.5M12 19.5V21"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <!-- СЕГОДНЯ -->
+  <section id="tab-today">
+    <div class="top"><span id="dateLine"></span><span id="dayNum"></span></div>
+    <div class="hero">
+      <div class="emblem"><svg class="ic rough" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-wheel"/></svg></div>
+      <div class="rankbox">
+        <div class="rank disp" id="rankName">Юнга</div>
+        <div class="sub" id="lvlLine"></div>
+      </div>
+      <div class="coins disp" title="Дублоны"><svg class="ic" aria-hidden="true"><use href="#i-coin"/></svg><span id="coinNum">0</span></div>
+    </div>
+    <div class="xpbar rough" role="progressbar" aria-label="Опыт до следующего звания"><div class="f" id="xpFill"></div></div>
+    <div class="xpline"><span id="xpNow"></span><span id="xpNext"></span></div>
+
+    <div class="stats" id="stats"></div>
+    <p class="storm" id="stormBox"></p>
+
+    <h2 class="disp">Квесты дня <small id="dayCount"></small></h2>
+    <div id="questList"></div>
+    <p class="hint" id="nextUnlock"></p>
+
+    <h2 class="disp">Свои задания <small id="slotCount"></small></h2>
+    <p class="hint" id="customSub"></p>
+    <div id="customList"></div>
+    <div class="addrow" id="addRow">
+      <input id="customText" maxlength="80" placeholder="Например: SQL-тренажёр 15 минут" aria-label="Текст своего задания">
+      <select id="customStat" aria-label="Характеристика"></select>
+      <button class="btn gold" id="customAdd">Добавить</button>
+    </div>
+
+    <h2 class="disp">Серии</h2>
+    <div class="hgrid" id="hMini"></div>
+
+    <h2 class="disp">Запись дня</h2>
+    <p class="hint" id="noteHint"></p>
+    <textarea id="noteBox" placeholder="Что сегодня получилось и что нет"></textarea>
+
+    <h2 class="disp">Увольнительная</h2>
+    <p class="hint">Один выходной от квестов в неделю. Только в тот же день, не задним числом.</p>
+    <button class="btn" id="offBtn"></button>
+  </section>
+
+  <!-- СЕРИИ -->
+  <section id="tab-habits" class="hidden">
+    <h2 class="disp">Серии</h2>
+    <p class="hint">Каждый день серии даёт опыт в «Дух», и чем длиннее серия, тем больше. Опыт копится в трюме и доставляется в порт на вехах вместе с дублонами. Срыв сжигает только трюм.</p>
+    <div id="habitList"></div>
+    <h2 class="disp">Что отслеживать</h2>
+    <p class="hint">Лучше 2–3 серии, которые держишь, чем 7, которые бросишь.</p>
+    <div class="chips" id="habitToggles"></div>
+  </section>
+
+  <!-- ВАХТА -->
+  <section id="tab-watch" class="hidden">
+    <h2 class="disp">Вахта <small id="watchLeft"></small></h2>
+    <p class="hint">Отстой вахту: 10 вопросов по морскому английскому. За каждый верный ответ дублоны и опыт в «Интеллект». 8 из 10 и больше — бонус. Чем больше твой корабль, тем выше жалованье. Три вахты в день.</p>
+    <div id="watchArea"></div>
+    <div class="fleetsum"><div><span class="sub">Слов выучено</span><b id="wLearned">0</b></div><div><span class="sub">Слов в словаре</span><b id="wTotal">0</b></div></div>
+  </section>
+
+  <!-- ФЛОТ -->
+  <section id="tab-fleet" class="hidden">
+    <h2 class="disp">Флот</h2>
+    <p class="hint">У тебя может быть один корабль. Он приносит дублоны каждый день, когда выполнена норма квестов. Большой корабль приносит больше, а чтобы получить на него патент, нужна казна: настоящие деньги, которые ты откладываешь в копилку или на накопительный счёт. Приложение деньги не хранит, только ведёт учёт.</p>
+    <div class="fleetsum"><div><span class="sub">Казна</span><b id="fleetSaved">0 ₽</b></div><div><span class="sub">Доход сегодня</span><b id="fleetToday">0</b></div></div>
+    <div class="addrow" style="margin-bottom:8px"><button class="btn gold" id="depBtn">Отложил ₽</button><button class="btn" id="wdBtn">Снял ₽</button></div>
+    <p class="hint" id="fleetRule"></p>
+    <div id="myShip"></div>
+    <h2 class="disp">Верфь</h2>
+    <p class="hint">Новый корабль покупается с обменом: старый сдаётся на верфь за 60% цены.</p>
+    <div id="yard"></div>
+  </section>
+
+  <!-- ЛАВКА -->
+  <section id="tab-shop" class="hidden">
+    <h2 class="disp">Лавка <small id="shopCoins"></small></h2>
+    <h2 class="disp" style="margin-top:6px">Сундуки</h2>
+    <div id="chestList"></div>
+    <div class="loot hidden" id="lootBox"></div>
+    <h2 class="disp">Награды</h2>
+    <p class="hint">Награды в реальной жизни. У каждой свой лимит, чтобы они оставались наградой.</p>
+    <div id="shopList"></div>
+    <h2 class="disp">Босс недели</h2>
+    <div class="shop"><div><div id="bossTitle"></div><div class="sub">+60 XP, +20 дублонов</div></div><button class="btn gold" id="bossBtn"></button></div>
+    <h2 class="disp">Покупки</h2>
+    <p class="hint" id="shopHist" style="white-space:pre-line"></p>
+  </section>
+
+  <!-- ПУТЬ -->
+  <section id="tab-path" class="hidden">
+    <h2 class="disp">Характеристики</h2>
+    <div id="statFull"></div>
+    <h2 class="disp">Путь по званиям</h2>
+    <div id="rankList"></div>
+  </section>
+
+  <!-- ЕЩЁ -->
+  <section id="tab-more" class="hidden">
+    <h2 class="disp">Резервная копия</h2>
+    <p class="hint">Прогресс хранится только на этом телефоне. Раз в неделю сохраняй копию: если удалить приложение или очистить Safari, прогресс можно будет вернуть.</p>
+    <div class="addrow"><button class="btn gold" id="exportBtn">Сохранить копию</button><button class="btn" id="importBtn">Восстановить из файла</button></div>
+    <input type="file" id="importFile" accept=".json,application/json" class="hidden">
+    <div class="hidden" id="bkBox" style="margin-top:10px">
+      <p class="hint" id="bkHint"></p>
+      <textarea id="bkText" style="min-height:120px;font-size:12px" aria-label="Текст копии"></textarea>
+      <div class="addrow" style="margin-top:6px"><button class="btn gold" id="bkCopy">Скопировать</button><button class="btn" id="bkRestore">Восстановить из текста</button></div>
+    </div>
+    <button class="btn" id="pasteBtn" style="margin-top:8px">Восстановить из текста</button>
+    <h2 class="disp">Путь</h2>
+    <button class="btn gold" id="pathBtn">Характеристики и звания</button>
+    <h2 class="disp">Словарь вахты</h2>
+    <p class="hint" id="dictInfo"></p>
+    <div class="addrow"><button class="btn" id="dictBtn">Загрузить словарь (JSON)</button></div>
+    <input type="file" id="dictFile" accept=".json,application/json" class="hidden">
+    <h2 class="disp">Неделя</h2>
+    <p class="hint">Если чётность недели неверная, нажми, чтобы переключить.</p>
+    <button class="btn" id="parityBtn"></button>
+    <h2 class="disp">Начать заново</h2>
+    <p class="hint">Стирает весь прогресс на этом телефоне.</p>
+    <button class="btn warn" id="resetBtn">Сбросить всё</button>
+  </section>
+</div>
+
+<nav aria-label="Разделы"><div class="in" role="tablist">
+  <button role="tab" data-tab="today" aria-selected="true"><svg class="ic"><use href="#i-today"/></svg>Сегодня</button>
+  <button role="tab" data-tab="watch" aria-selected="false"><svg class="ic"><use href="#i-compassn"/></svg>Вахта</button>
+  <button role="tab" data-tab="fleet" aria-selected="false"><svg class="ic"><use href="#i-ship"/></svg>Флот</button>
+  <button role="tab" data-tab="habits" aria-selected="false"><svg class="ic"><use href="#i-chain"/></svg>Серии</button>
+  <button role="tab" data-tab="shop" aria-selected="false"><svg class="ic"><use href="#i-chest"/></svg>Лавка</button>
+  <button role="tab" data-tab="more" aria-selected="false"><svg class="ic"><use href="#i-gear2"/></svg>Ещё</button>
+</div></nav>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const STATS={
+  sila:{n:"Сила",c:"var(--rust)",i:"sila",lvl:1},intel:{n:"Интеллект",c:"var(--slate)",i:"intel",lvl:1},
+  duh:{n:"Дух",c:"var(--moss)",i:"duh",lvl:1},disc:{n:"Дисциплина",c:"var(--plum)",i:"disc",lvl:1},
+  svyaz:{n:"Связи",c:"var(--rose)",i:"svyaz",lvl:5},prikl:{n:"Приключения",c:"var(--amber)",i:"prikl",lvl:6},master:{n:"Мастерство",c:"var(--gold)",i:"master",lvl:7}
+};
+const RANKS=[["Юнга",0],["Матрос",250],["Старший матрос",600],["Боцман",1300],["Третий помощник",3000],["Второй помощник",6500],["Старпом",13000],["Капитан",26000],["Капитан дальнего плавания",52000],["Адмирал",110000]];
+const QUESTS=[
+  {id:"bed",s:"disc",tiers:[[1,"Заправить кровать",5]]},
+  {id:"teeth",s:"disc",tiers:[[1,"Почистить зубы утром и вечером",5]]},
+  {id:"warmup",s:"sila",tiers:[[1,"Зарядка 10 минут",10],[4,"Зарядка 15 минут и растяжка",15]]},
+  {id:"study",s:"intel",tiers:[[1,"Учёба 10 минут",10],[2,"Учёба 20 минут",15],[4,"Учёба 30 минут",20],[6,"Учёба 45 минут",25],[8,"Учёба 60 минут",30]]},
+  {id:"morning",s:"duh",tiers:[[1,"Первые 15 минут после подъёма без телефона",10],[3,"Первые 30 минут без телефона",15],[6,"Первый час без телефона",20]]},
+  {id:"gym",s:"sila",days:[1,3,6],tiers:[[2,"Зал 60 минут",40],[6,"Зал 60 минут по программе, веса записаны",45]]},
+  {id:"eng",s:"intel",tiers:[[2,"Английский 10 минут",10],[4,"Английский 15 минут",15],[7,"Английский 25 минут: говорение или сериал без субтитров",25]]},
+  {id:"win",s:"duh",tiers:[[3,"Запись дня",10]]},
+  {id:"tidy",s:"disc",tiers:[[3,"5 минут порядка: стол, комната, вещи",10]]},
+  {id:"sleep",s:"sila",tiers:[[4,"Отбой по цели",10]]},
+  {id:"read",s:"intel",tiers:[[4,"Чтение 10 страниц",10],[6,"Чтение 20 страниц",15]]},
+  {id:"games_after",s:"duh",tiers:[[4,"Игры только после выполненных квестов",15]]},
+  {id:"contact",s:"svyaz",tiers:[[5,"Живой контакт: звонок родным, другу или встреча",10],[8,"Живой контакт и что-то хорошее для другого",20]]},
+  {id:"prep",s:"disc",tiers:[[5,"Вечером собрать вещи и план на завтра",10]]},
+  {id:"new",s:"prikl",tiers:[[6,"Что-то новое: маршрут, блюдо, место, музыка или навык",15]]},
+  {id:"skill",s:"master",days:[1,2,3,4,5,6],tiers:[[7,"Аналитика или ИИ: 45 минут практики",30],[8,"90 минут глубокой работы без телефона",45]]},
+  {id:"steps",s:"sila",tiers:[[8,"10 000 шагов или пробежка",15]]},
+  {id:"calm",s:"duh",tiers:[[9,"10 минут тишины",15]]},
+  {id:"project",s:"master",tiers:[[9,"Свой проект или бизнес: один конкретный шаг",30]]}
+];
+const CUSTOM_SLOTS=L=>L>=7?3:L>=4?2:1, CUSTOM_XP=15;
+const PROF={
+  hard:{daily:{base:10,step:2,cap:40},ms:[[3,50,10],[7,150,30],[14,300,60],[30,700,150],[60,1500,300],[90,2500,500]]},
+  mid:{daily:{base:7,step:1.5,cap:30},ms:[[3,30,8],[7,90,20],[14,200,40],[30,450,100],[60,1000,200],[90,1800,350]]},
+  easy:{daily:{base:5,step:1,cap:25},ms:[[3,20,5],[7,50,15],[14,100,30],[30,250,70],[60,500,150],[100,1000,300]]}
+};
+const HABITS=[
+  {id:"control",t:"Контроль",d:"Без порно и дрочки. Секс можно.",p:"hard",on:true,i:"lock"},
+  {id:"shorts",t:"Без шортсов",d:"Никаких TikTok, YouTube Shorts, Reels, VK Клипов и ленты VK Видео.",p:"mid",on:true,i:"phone"},
+  {id:"night_phone",t:"Отбой по плану",d:"",p:"easy",on:true,i:"moon"},
+  {id:"energy",t:"Без энергетиков",d:"Энергия от сна и еды, а не из банки.",p:"mid",on:false,i:"can"},
+  {id:"gamble",t:"Без ставок и кейсов",d:"Ни рубля на ставки, кейсы и лутбоксы.",p:"mid",on:false,i:"dice"},
+  {id:"alcohol",t:"Без алкоголя",d:"Ни капли.",p:"mid",on:false,i:"bottle"},
+  {id:"junk",t:"Без фастфуда",d:"И без сладкой газировки.",p:"easy",on:false,i:"burger"}
+];
+const BOSS={t:"Семь дней подряд закрыть норму дня",xp:60};
+const SHOP=[["Вкусняшка без угрызений",15,3,7],["Час игр вне очереди",20,3,7],["Серия сериала или фильм",25,3,7],["Утро без будильника (выходной)",40,1,7],["Лишняя увольнительная",80,1,14],["Покупка для себя до 500 ₽",150,1,30],["Большая награда: вещь или поездка",500,1,90]];
+const KEY="sudovoy_zhurnal_v1";
+// корабли: имя, цена (дублоны), доход в день, патент (казна ₽), рисунок
+const SHIP_COST=[50,120,250,450,750,1150,1700,2400,3300,4500,6000,8000,10500,14000,18500,24000,31000,40000,52000,67000,90000];
+const SHIP_LIC=[0,1000,2000,3500,5000,7500,10000,15000,20000,30000,40000,55000,75000,100000,140000,200000,280000,400000,550000,750000,1000000];
+const SHIP_NAMES=["Шлюпка","Ял","Моторная лодка","Рыболовный баркас","Прогулочная яхта","Буксир","Шхуна","Бриг","Паром","Корвет","Фрегат","Барк","Клипер","Сухогруз","Контейнеровоз","Нефтевоз","Круизный лайнер","Ледокол","Суперъяхта","Линкор","Флагман"];
+const SHIP_G=[{len:34,masts:0},{len:44,masts:1,h:26,sq:0},{type:"motor"},{type:"fishing"},{type:"yacht"},{type:"tug"},{len:64,masts:2,h:34,sq:0},{len:70,masts:2,h:36,sq:2},{type:"ferry"},{len:76,masts:3,h:34,sq:2,guns:1},{len:84,masts:3,h:38,sq:3,guns:1},{len:88,masts:3,h:40,sq:3,mixed:1},{len:94,masts:3,h:44,sq:4},{type:"bulk"},{type:"container"},{type:"tanker"},{type:"cruise"},{len:98,modern:1,stacks:1},{type:"superyacht"},{len:100,masts:3,h:44,sq:3,stern:1,guns:2},{flag:1}];
+const SHIPS=SHIP_NAMES.map((n,k)=>[n,SHIP_COST[k],Math.round(SHIP_COST[k]/(17-5*k/20)),SHIP_LIC[k],SHIP_G[k]]);
+const TRADE=0.6;
+const CHESTS=[
+  {n:"Сундук юнги",c:30,t:[[45,"c",10,40],[20,"c",40,80],[15,"x",20,60],[8,"coupon"],[5,"off"],[5,"c",150,150],[2,"disc",20]]},
+  {n:"Морской сундук",c:150,t:[[45,"c",60,200],[20,"c",200,400],[15,"x",40,100],[8,"coupon"],[6,"off"],[4,"c",800,800],[2,"disc",30]]},
+  {n:"Капитанский сундук",c:600,t:[[45,"c",250,800],[20,"c",800,1500],[15,"x",60,150],[8,"coupon"],[6,"off"],[4,"c",3000,3000],[2,"disc",40]]},
+  {n:"Легендарный сундук",c:2500,t:[[45,"c",1000,3000],[20,"c",3000,6000],[15,"x",100,250],[8,"coupon"],[6,"off"],[4,"c",12000,12000],[2,"disc",50]]}
+];
+const WORDS=[
+["bow","нос судна"],["stern","корма"],["port side","левый борт"],["starboard","правый борт"],["hull","корпус"],["deck","палуба"],["bridge","ходовой мостик"],["keel","киль"],["mast","мачта"],["anchor","якорь"],
+["rudder","руль (перо руля)"],["propeller","гребной винт"],["cabin","каюта"],["galley","камбуз"],["hatch","люк"],["hold","трюм"],["cargo","груз"],["crew","экипаж"],["captain","капитан"],["chief mate","старший помощник"],
+["second mate","второй помощник"],["third mate","третий помощник"],["boatswain","боцман"],["able seaman","матрос 1-го класса"],["ordinary seaman","матрос 2-го класса"],["cadet","курсант"],["chief engineer","старший механик"],["engine room","машинное отделение"],["lifeboat","спасательная шлюпка"],["life jacket","спасательный жилет"],
+["lifebuoy","спасательный круг"],["fire extinguisher","огнетушитель"],["muster station","место сбора"],["abandon ship","покинуть судно"],["man overboard","человек за бортом"],["watch","вахта"],["lookout","впередсмотрящий"],["helmsman","рулевой"],["compass","компас"],["chart","морская карта"],
+["course","курс"],["bearing","пеленг"],["latitude","широта"],["longitude","долгота"],["knot","узел (скорость)"],["nautical mile","морская миля"],["depth","глубина"],["draft","осадка"],["tide","прилив и отлив"],["current","течение"],
+["wave","волна"],["swell","зыбь"],["gale","шторм (сильный ветер)"],["fog","туман"],["visibility","видимость"],["wind","ветер"],["berth","причал (место стоянки)"],["quay","причальная стенка"],["pier","пирс"],["harbour","гавань"],
+["mooring line","швартовный конец"],["rope","трос"],["bollard","кнехт"],["winch","лебёдка"],["windlass","брашпиль"],["crane","кран"],["container","контейнер"],["tanker","танкер"],["bulk carrier","балкер (навалочное судно)"],["container ship","контейнеровоз"],
+["tug","буксир"],["ferry","паром"],["icebreaker","ледокол"],["fishing vessel","рыболовное судно"],["yacht","яхта"],["pilot","лоцман"],["pilot ladder","лоцманский трап"],["gangway","сходня (трап)"],["accommodation ladder","забортный трап"],["bulkhead","переборка"],
+["porthole","иллюминатор"],["ballast","балласт"],["fuel","топливо"],["engine","двигатель"],["boiler","котёл"],["pump","насос"],["valve","клапан"],["generator","генератор"],["radar","радар"],["echo sounder","эхолот"],
+["distress signal","сигнал бедствия"],["flare","сигнальная ракета"],["collision","столкновение"],["grounding","посадка на мель"],["fire","пожар"],["flooding","поступление воды"],["leak","течь"],["list","крен"],["trim","дифферент"],["stability","остойчивость"],
+["lashing","крепление груза"],["to moor","швартоваться"],["to anchor","становиться на якорь"],["to steer","управлять рулём"],["to load","грузить"],["to unload","выгружать"],["departure","отход"],["arrival","приход"],["voyage","рейс"],["logbook","судовой журнал"],
+["certificate","свидетельство"],["inspection","проверка (инспекция)"],["drill","учения"],["safety","безопасность"],["hazard","опасность"],["buoy","буй"],["lighthouse","маяк"],["channel","канал (проход)"],["shallow water","мелководье"],["reef","риф"],
+["coast","побережье"],["shore","берег"],["strait","пролив"],["bay","залив"],["horizon","горизонт"],["masthead light","топовый огонь"],["sidelights","бортовые огни"],["whistle","гудок (свисток)"],["ensign","кормовой флаг"],["overtaking","обгон"],
+["give way","уступить дорогу"],["speed","скорость"],["full ahead","полный вперёд"],["half ahead","средний вперёд"],["slow ahead","малый вперёд"],["stop engine","стоп машина"],["full astern","полный назад"],["hard to port","лево на борт"],["hard to starboard","право на борт"],["midships","прямо руль"],
+["steady","так держать"],["wheel","штурвал"],["freeboard","надводный борт"],["waterline","ватерлиния"],["beam","ширина судна"],["tonnage","тоннаж"],["displacement","водоизмещение"],["shipowner","судовладелец"],["charterer","фрахтователь"],["bill of lading","коносамент"],
+["customs","таможня"],["crew list","судовая роль"],["seaman's book","мореходная книжка"],["cook","кок"],["mess room","столовая команды"],["first aid","первая помощь"],["stretcher","носилки"],["helmet","каска"],["rust","ржавчина"],["paint","краска"]
+];
+const DEFS=[
+["The front part of a ship","bow"],["The back part of a ship","stern"],["The left side of a ship when facing forward","port side"],["The right side of a ship when facing forward","starboard"],["The place from where the ship is navigated","bridge"],
+["The kitchen on a ship","galley"],["A heavy object dropped to keep a ship in place","anchor"],["The officer in command of the ship","captain"],["A speed of one nautical mile per hour","knot"],["A person who guides ships in and out of a harbour","pilot"],
+["The space where cargo is carried","hold"],["A tower with a light that guides ships","lighthouse"],["A floating marker in the water","buoy"],["The depth of the ship below the waterline","draft"],["A ship designed to break ice","icebreaker"],
+["A ship that carries oil or liquid cargo","tanker"],["A small powerful boat that pushes or pulls large ships","tug"],["The book where events of the voyage are recorded","logbook"],["A period of duty on a ship","watch"],["A crew member who watches for danger ahead","lookout"],
+["A wall that divides the inside of a ship","bulkhead"],["A round window in the ship's side","porthole"],["Water taken on board to improve stability","ballast"],["The width of a ship at its widest point","beam"],["A rope used to tie a ship to the berth","mooring line"],
+["The steering blade at the stern","rudder"],["Order: turn the rudder fully to the left","hard to port"],["Order: put the rudder in the centre","midships"],["Order: keep the ship on its present course","steady"],["A signal fired into the sky to call for help","flare"]
+];
+
+const WATCHES_PER_DAY=3,WATCH_Q=10;
+const pad=n=>String(n).padStart(2,"0");
+const dkey=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+function weekIdx(d){const t=new Date(d.getFullYear(),d.getMonth(),d.getDate());t.setDate(t.getDate()-((t.getDay()+6)%7));return Math.round((t-new Date(2024,0,1))/6048e5)}
+const dow=d=>((d.getDay()+6)%7)+1;
+const $=id=>document.getElementById(id);
+function mk(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e}
+function icon(name,cls){const s=document.createElementNS("http://www.w3.org/2000/svg","svg");s.setAttribute("class","ic"+(cls?" "+cls:""));s.setAttribute("aria-hidden","true");const u=document.createElementNS("http://www.w3.org/2000/svg","use");u.setAttribute("href","#i-"+name);s.appendChild(u);return s}
+
+function fresh(){const t=dkey(new Date());return {v:1,start:t,off:{},days:{},dxp:{},notes:{},bosses:{},habits:{},habitOn:{},custom:[],spent:[],ship:null,shipHist:[],shipTx:[],deposits:[],chests:[],watchLog:[],words:{},dict:[],extraOff:0,offExtra:{},discount:0,parityRef:{w:weekIdx(new Date(2026,8,1)),odd:true}}}
+let P=fresh();
+function norm(){const f=fresh();for(const k in f)if(P[k]===undefined)P[k]=f[k];
+  ["off","days","dxp","notes","bosses","habits","habitOn"].forEach(k=>{if(!P[k]||typeof P[k]!=="object"||Array.isArray(P[k]))P[k]={}});
+  ["custom","spent","shipHist","shipTx","deposits","chests","watchLog","dict"].forEach(k=>{if(!Array.isArray(P[k]))P[k]=[]});
+  if(!P.offExtra||typeof P.offExtra!=="object")P.offExtra={};if(typeof P.extraOff!=="number")P.extraOff=0;if(!P.words||typeof P.words!=="object")P.words={};if(typeof P.discount!=="number")P.discount=0;if(P.ship===undefined)P.ship=null;
+  HABITS.forEach(h=>{if(P.habitOn[h.id]===undefined)P.habitOn[h.id]=h.on;if(!P.habits[h.id])P.habits[h.id]={start:P.start,best:0}})}
+try{const s=localStorage.getItem(KEY);if(s)P=JSON.parse(s)}catch(e){}
+norm();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(P))}catch(e){toast("Не удалось сохранить. Проверь, не включён ли частный режим Safari.")}}
+save();
+
+function tierAt(q,L){let t=null;q.tiers.forEach(x=>{if(x[0]<=L)t=x});return t}
+const qById={};QUESTS.forEach(q=>qById[q.id]=q);
+function habitDays(s){const t=new Date(dkey(new Date())+"T00:00:00"),a=new Date(s.start+"T00:00:00");return isNaN(a)?0:Math.max(0,Math.round((t-a)/864e5))}
+function hDaily(h,i){const d=PROF[h.p].daily;return Math.round(Math.min(d.base+d.step*(i-1),d.cap))}
+function hSum(h,n){let x=0;for(let i=1;i<=n;i++)x+=hDaily(h,i);return x}
+function habitState(h){const s=P.habits[h.id],n=habitDays(s),ms=PROF[h.p].ms;
+  const reached=ms.filter(m=>m[0]<=n),last=reached.length?reached[reached.length-1][0]:0;
+  return {s,n,ms,banked:hSum(h,last)+reached.reduce((a,m)=>a+m[1],0),hold:hSum(h,n)-hSum(h,last),coins:reached.reduce((a,m)=>a+m[2],0),next:ms.find(m=>m[0]>n)}}
+function bankHabit(h,today){const hs=habitState(h),s=hs.s;s.totalDays=(s.totalDays||0)+hs.n;s.best=Math.max(s.best||0,hs.n);s.bankXp=(s.bankXp||0)+hs.banked;s.bankCoins=(s.bankCoins||0)+hs.coins;s.start=today}
+function sleepTarget(){const s=P.habits.night_phone||{};const hs=P.habitOn.night_phone?habitDays(s):0;const tot=(s.totalDays||0)+hs;
+  const m=Math.max(330,360-30*Math.floor(tot/4)),t=(18*60+m)%1440;return {txt:pad(Math.floor(t/60))+":"+pad(t%60),final:m===330,left:4-(tot%4)}}
+function habitDesc(h){if(h.id!=="night_phone")return h.d;const st=sleepTarget();return "Цель: телефон убран и лёг до "+st.txt+"."+(st.final?" Это итоговое время.":" Через "+st.left+" удачн. ночи цель станет на 30 минут раньше.")}
+
+const MIN_Q=4;
+const penOf=k=>k<=1?10:50*Math.pow(2,Math.min(k-2,20));
+function penalties(){let pen=0,k=0;const t=new Date();t.setHours(0,0,0,0);const d=new Date(P.start+"T00:00:00");if(isNaN(d))return {pen:0,k:0};
+  d.setDate(d.getDate()+1);
+  for(;d<t;d.setDate(d.getDate()+1)){const key=dkey(d);if(P.off[key])continue;const n=(P.days[key]||[]).filter(id=>!String(id).startsWith("c_")).length;if(n>=MIN_Q)k=0;else{k++;pen+=penOf(k)}}
+  return {pen,k}}
+const fmt=n=>Math.round(n).toLocaleString("ru-RU");
+function normMet(key){return !P.off[key]&&(P.days[key]||[]).filter(id=>!String(id).startsWith("c_")).length>=MIN_Q}
+function savings(key){return P.deposits.filter(d=>!key||d.date<=key).reduce((a,d)=>a+d.amt,0)}
+function depositRecent(key){const t=new Date(key+"T00:00:00");t.setDate(t.getDate()-6);const from=dkey(t);return P.deposits.some(d=>d.amt>0&&d.date>=from&&d.date<=key)}
+function shipDay(k,key){if(!normMet(key))return 0;return SHIPS[k][2]*(depositRecent(key)?1:0.5)}
+function shipIncome(){let total=0;const today=dkey(new Date());
+  P.shipHist.forEach(h=>{const d=new Date(h.from+"T00:00:00");for(;;d.setDate(d.getDate()+1)){const k=dkey(d);if(k>today||(h.to&&k>=h.to))break;total+=shipDay(h.k,k)}});
+  return Math.floor(total)}
+function calc(){let xp=0,coins=0;const st={};Object.keys(STATS).forEach(k=>st[k]=0);
+  for(const d in P.days)(P.days[d]||[]).forEach(id=>{const r=P.dxp[d]&&P.dxp[d][id];const x=r?r.xp:(qById[id]?qById[id].tiers[0][2]:10),s=r?r.s:(qById[id]?qById[id].s:"duh");xp+=x;st[s]=(st[s]||0)+x;coins+=1});
+  for(const w in P.bosses){xp+=P.bosses[w].xp||0;coins+=20}
+  HABITS.forEach(h=>{const s=P.habits[h.id];let hx=s.bankXp||0,hc=s.bankCoins||0;if(P.habitOn[h.id]){const hs=habitState(h);hx+=hs.banked+hs.hold;hc+=hs.coins}xp+=hx;st.duh+=hx;coins+=hc});
+  coins-=P.spent.reduce((a,x)=>a+x.cost,0);
+  P.chests.forEach(c=>{coins+=(c.coins||0)-c.cost;xp+=c.xp||0});
+  coins+=shipIncome()+P.shipTx.reduce((a,t)=>a+t.amt,0);
+  P.watchLog.forEach(wl=>{coins+=wl.coins;xp+=wl.xp;st.intel+=wl.xp});
+  const storm=penalties();xp=Math.max(0,xp-storm.pen);
+  let lvl=1;RANKS.forEach((r,i)=>{if(xp>=r[1])lvl=i+1});
+  return {xp,st,lvl,storm,coins}}
+function openQuests(L,wd){return QUESTS.filter(q=>(!q.days||q.days.includes(wd))&&tierAt(q,L))}
+function unlocksAt(L){const out=[];
+  Object.values(STATS).forEach(v=>{if(v.lvl===L&&L>1)out.push("характеристика «"+v.n+"»")});
+  QUESTS.forEach(q=>q.tiers.forEach((t,i)=>{if(t[0]===L)out.push((i===0?"":"усиление: ")+t[1])}));
+  if(L>1&&CUSTOM_SLOTS(L)>CUSTOM_SLOTS(L-1))out.push("ещё один слот своего задания");
+  return out}
+
+let lastLvl=null,curLvl=1;
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove("show"),4200)}
+
+function render(){
+  norm();
+  const now=new Date(),today=dkey(now),wd=dow(now),w=weekIdx(now);
+  const {xp,st,lvl,storm,coins}=calc();curLvl=lvl;
+  if(lastLvl!==null&&lvl>lastLvl)toast("Новое звание: "+RANKS[lvl-1][0]+"! Открыто: "+unlocksAt(lvl).join("; "));
+  if(lastLvl!==null&&lvl<lastLvl)toast("Шторм отбросил тебя до звания «"+RANKS[lvl-1][0]+"».");
+  lastLvl=lvl;
+
+  const days=["","пн","вт","ср","чт","пт","сб","вс"];
+  const odd=((w-P.parityRef.w)%2===0)===P.parityRef.odd;
+  $("dateLine").textContent=days[wd]+", "+now.toLocaleDateString("ru-RU",{day:"numeric",month:"long"})+" · "+(odd?"нечётная":"чётная");
+  const dayN=Math.round((new Date(today+"T00:00:00")-new Date(P.start+"T00:00:00"))/864e5)+1;
+  $("dayNum").textContent="день "+dayN;
+  $("rankName").textContent=RANKS[lvl-1][0];
+  $("lvlLine").textContent="Звание "+lvl+" из "+RANKS.length;
+  $("coinNum").textContent=coins;
+  const cur=RANKS[lvl-1][1],nxt=RANKS[lvl]?RANKS[lvl][1]:null;
+  $("xpFill").style.width=(nxt?Math.min(100,(xp-cur)/(nxt-cur)*100):100)+"%";
+  $("xpNow").textContent=xp+" XP";
+  $("xpNext").textContent=nxt?("до «"+RANKS[lvl][0]+"»: "+(nxt-xp)):"высшее звание";
+
+  // статы
+  const sg=$("stats");sg.innerHTML="";
+  Object.entries(STATS).filter(([k,v])=>v.lvl<=lvl||v.lvl<=lvl+2).slice(0,Math.max(4,Object.values(STATS).filter(v=>v.lvl<=lvl).length)).forEach(([k,v])=>{
+    const locked=v.lvl>lvl,x=st[k]||0;
+    const d=mk("div","st"+(locked?" locked":""));const ic=icon(v.i);ic.style.color=v.c;d.appendChild(ic);
+    d.appendChild(mk("div","n",v.n));d.appendChild(mk("div","lv disp",locked?"—":"ур. "+(Math.floor(x/200)+1)));
+    const b=mk("div","b"),i=mk("i");i.style.width=(locked?0:(x%200)/2)+"%";i.style.background=v.c;b.appendChild(i);d.appendChild(b);sg.appendChild(d)});
+  sg.style.gridTemplateColumns="repeat("+Math.min(4,sg.children.length)+",minmax(0,1fr))";
+
+  // квесты
+  const done=P.days[today]||[];
+  const open=openQuests(lvl,wd),doneOpen=open.filter(q=>done.includes(q.id)).length,allDone=doneOpen===open.length;
+  $("dayCount").textContent=doneOpen+" из "+open.length;
+  const ql=$("questList");ql.innerHTML="";
+  open.forEach(q=>{const t=tierAt(q,lvl),isD=done.includes(q.id),r=P.dxp[today]&&P.dxp[today][q.id];
+    const b=mk("button","q"+(isD?" done":""));b.setAttribute("aria-pressed",isD?"true":"false");
+    const box=mk("span","box");if(isD)box.appendChild(icon("check"));b.appendChild(box);
+    const tt=mk("span","t");tt.appendChild(mk("b","",q.id==="sleep"?"Отбой до "+sleepTarget().txt+", экран выключен":t[1]));tt.appendChild(mk("span","",STATS[q.s].n));b.appendChild(tt);
+    const qi=icon(STATS[q.s].i,"qi");qi.style.color=STATS[q.s].c;b.appendChild(qi);
+    b.appendChild(mk("span","xp","+"+(r?r.xp:t[2])));
+    b.onclick=()=>toggle(q.id,t[2],q.s);ql.appendChild(b)});
+  const nl=lvl<RANKS.length?unlocksAt(lvl+1):[];
+  $("nextUnlock").textContent=nl.length?"На звании «"+RANKS[lvl][0]+"» откроется: "+nl.join("; ")+".":"";
+
+  // свои
+  const slots=CUSTOM_SLOTS(lvl);
+  $("slotCount").textContent=P.custom.length+" из "+slots;
+  $("customSub").textContent=(allDone?"Все квесты закрыты, свои задания засчитываются.":"Засчитываются после всех квестов дня.")+" +"+CUSTOM_XP+" XP каждое.";
+  const cl=$("customList");cl.innerHTML="";
+  P.custom.forEach(c=>{const isD=done.includes(c.id),row=mk("div","crow");
+    const b=mk("button","q"+(isD?" done":""));const box=mk("span","box");if(isD)box.appendChild(icon("check"));b.appendChild(box);
+    const tt=mk("span","t");tt.appendChild(mk("b","",c.t));tt.appendChild(mk("span","",(STATS[c.s]||STATS.duh).n));b.appendChild(tt);b.appendChild(mk("span","xp","+"+CUSTOM_XP));
+    if(!allDone&&!isD)b.disabled=true;else b.onclick=()=>toggle(c.id,CUSTOM_XP,c.s);
+    const del=mk("button","del","✕");del.setAttribute("aria-label","Удалить «"+c.t+"»");
+    del.onclick=()=>{if(confirm("Удалить задание «"+c.t+"»? Заработанный опыт останется.")){P.custom=P.custom.filter(x=>x.id!==c.id);save();render()}};
+    row.appendChild(b);row.appendChild(del);cl.appendChild(row)});
+  $("addRow").classList.toggle("hidden",P.custom.length>=slots);
+  const sel=$("customStat");if(sel.dataset.l!==String(lvl)){sel.innerHTML="";Object.entries(STATS).forEach(([k,v])=>{if(v.lvl<=lvl){const o=mk("option","",v.n);o.value=k;sel.appendChild(o)}});sel.dataset.l=String(lvl)}
+
+  // шторм
+  const offToday=!!P.off[today],req=Math.min(MIN_Q,open.length),need=Math.max(0,req-doneOpen);
+  let msg;
+  if(offToday)msg="Сегодня увольнительная. День не считается пропуском.";
+  else if(storm.k>0)msg="Шторм: пропущено дней подряд: "+storm.k+", штраф −"+storm.pen+" XP. "+(need?"Закрой ещё "+need+" кв., иначе завтра ещё −"+penOf(storm.k+1)+".":"Норма выполнена, шторм закончится завтра.");
+  else msg=need?"Норма дня: ещё "+need+" кв. Пропуск: завтра −10 XP, второй подряд −50, дальше вдвое больше.":"Норма дня выполнена. Штрафа не будет.";
+  const sb=$("stormBox");sb.textContent=msg;sb.className="storm"+(offToday||!need?" good":storm.k>0?" bad":"");
+  const offWeek=Object.keys(P.off).some(k=>P.off[k]&&k!==today&&weekIdx(new Date(k+"T00:00:00"))===w);
+  const ob=$("offBtn"),useExtra=offWeek&&P.extraOff>0;ob.disabled=!offToday&&offWeek&&!useExtra;
+  ob.textContent=offToday?"Отменить увольнительную":ob.disabled?"На этой неделе уже использована":useExtra?"Взять запасную увольнительную ("+P.extraOff+")":"Взять увольнительную сегодня";
+  ob.onclick=()=>{if(offToday){delete P.off[today];if(P.offExtra[today]){P.extraOff++;delete P.offExtra[today]}}
+    else{if(!confirm(useExtra?"Потратить запасную увольнительную из сундука?":"Взять увольнительную сегодня? Одна в неделю."))return;P.off[today]=true;if(useExtra){P.extraOff--;P.offExtra[today]=true}}save();render()};
+
+  // серии мини
+  const hm=$("hMini");hm.innerHTML="";
+  const act=HABITS.filter(h=>P.habitOn[h.id]);
+  hm.style.gridTemplateColumns="repeat("+Math.max(1,Math.min(3,act.length))+",minmax(0,1fr))";
+  act.forEach(h=>{const hs=habitState(h),b=mk("button","hc");b.appendChild(icon(h.i));b.appendChild(mk("div","d disp",hs.n+" д."));b.appendChild(mk("div","nm",h.t));
+    b.appendChild(mk("div","nt",h.id==="night_phone"?"цель "+sleepTarget().txt:hs.next?"до вехи "+(hs.next[0]-hs.n)+" д.":"все вехи"));
+    b.onclick=()=>go("habits");hm.appendChild(b)});
+
+  $("noteHint").textContent=lvl>=3?"Запись засчитывает квест «Запись дня».":"С «Старшего матроса» запись будет давать опыт.";
+  const nb=$("noteBox");if(document.activeElement!==nb)nb.value=P.notes[today]||"";
+
+  // серии полные
+  const hl=$("habitList");hl.innerHTML="";
+  act.forEach(h=>{const hs=habitState(h),s=hs.s,best=Math.max(s.best||0,hs.n),el=mk("div","hfull");
+    const row=mk("div","row"),l=mk("div");const ttl=mk("div","disp");ttl.style.fontSize="19px";ttl.textContent=h.t+(h.p==="hard"?" · сложная":h.p==="easy"?" · простая":"");l.appendChild(ttl);l.appendChild(mk("div","sub",habitDesc(h)));row.appendChild(l);row.appendChild(mk("div","big disp",hs.n+" д."));el.appendChild(row);
+    el.appendChild(mk("p","sub","Завтра +"+hDaily(h,hs.n+1)+" XP. В трюме "+hs.hold+" XP"+(hs.next?", до порта "+(hs.next[0]-hs.n)+" д.":"")+". В порту "+((s.bankXp||0)+hs.banked)+" XP. Лучшая серия: "+best+" д."));
+    const mr=mk("div","marks");hs.ms.forEach(m=>{mr.appendChild(mk("span",hs.n>=m[0]?"got":"",m[0]+" д.: +"+m[1]+" XP, +"+m[2]))});el.appendChild(mr);
+    const br=mk("button","btn warn","Сорвался");br.onclick=()=>{if(!confirm("Сорвался в «"+h.t+"»? Трюм ("+hs.hold+" XP) сгорит, порт останется."))return;bankHabit(h,today);save();render();toast("Серия заново. Порт твой, трюм пуст.")};
+    el.appendChild(br);hl.appendChild(el)});
+  const ht=$("habitToggles");ht.innerHTML="";
+  HABITS.forEach(h=>{const on=!!P.habitOn[h.id],b=mk("button","chip"+(on?" on":""),(on?"✓ ":"+ ")+h.t);b.setAttribute("aria-pressed",on?"true":"false");
+    b.onclick=()=>{if(on){if(!confirm("Выключить «"+h.t+"»? Порт сохранится, трюм сгорит."))return;bankHabit(h,today);P.habitOn[h.id]=false}else{P.habits[h.id].start=today;P.habitOn[h.id]=true}save();render()};ht.appendChild(b)});
+
+  // лавка
+  $("shopCoins").textContent=coins+" дублонов";
+  const sh=$("shopList");sh.innerHTML="";
+  SHOP.forEach(([t,c,lim,per])=>{const since=new Date();since.setDate(since.getDate()-per+1);const sk=dkey(since);
+    const used=P.spent.filter(x=>x.t===t&&x.cost>0&&x.date>=sk).length,left=lim-used;
+    const d=mk("div","shop"),l=mk("div");l.appendChild(mk("div","",t));l.appendChild(mk("div","sub",c+" дублонов · осталось "+left+" из "+lim+" за "+per+" дн."));d.appendChild(l);
+    const b=mk("button","btn gold",left<=0?"Лимит":coins<c?"Не хватает "+(c-coins):"Купить");if(coins<c||left<=0)b.disabled=true;
+    else b.onclick=()=>{if(!confirm("Купить «"+t+"» за "+c+"?"))return;P.spent.push({t,cost:c,date:today});if(t==="Лишняя увольнительная")P.extraOff++;save();render();toast("Куплено: "+t+". Заслужил.")};
+    d.appendChild(b);sh.appendChild(d)});
+  const hist=P.spent.slice(-10).reverse();
+  $("shopHist").textContent=hist.length?hist.map(x=>x.date.slice(8)+"."+x.date.slice(5,7)+": "+x.t+" (−"+x.cost+")").join("\n"):"Покупок пока нет.";
+  $("bossTitle").textContent=BOSS.t;
+  const won=!!P.bosses[w],bb=$("bossBtn");bb.textContent=won?"Побеждён ✓":"Победил";
+  bb.onclick=()=>{if(won){if(!confirm("Отменить победу над боссом?"))return;delete P.bosses[w]}else{if(!confirm("Точно семь дней подряд норма закрыта?"))return;P.bosses[w]={t:BOSS.t,xp:BOSS.xp};toast("Босс недели повержен! +60 XP")}save();render()};
+
+  // сундуки
+  const cl2=$("chestList");cl2.innerHTML="";
+  CHESTS.forEach((ch,ci)=>{const d=mk("div","chest");d.id="chest"+ci;d.appendChild(icon("chest"));const l=mk("div");l.style.flex="1";
+    const cn=mk("div","disp",ch.n);cn.style.fontSize="18px";l.appendChild(cn);l.appendChild(mk("div","sub",ch.c+" дублонов"));d.appendChild(l);
+    const b=mk("button","btn gold",coins<ch.c?"Не хватает "+(ch.c-coins):"Открыть");b.disabled=coins<ch.c;b.onclick=()=>openChest(ci);d.appendChild(b);cl2.appendChild(d)});
+
+  // флот
+  const sav=savings(),cs=P.ship;
+  $("fleetSaved").textContent=fmt(sav)+" ₽";
+  $("fleetToday").textContent=cs?"+"+fmt(shipDay(cs.k,today)):"—";
+  $("fleetRule").textContent="Корабль работает в дни, когда выполнена норма квестов. Если больше 7 дней не было взноса в казну, доход падает вдвое."+(P.discount?" У тебя карта сокровищ: скидка "+Math.round(P.discount*100)+"% на следующий корабль.":"");
+  const ms=$("myShip");ms.innerHTML="";
+  if(cs){const sh=SHIPS[cs.k],c=mk("div","ship cs"),a=mk("div","art");a.innerHTML=shipSVG(sh[4]);c.appendChild(a);
+    const hd=mk("div","hd");hd.appendChild(mk("div","nm disp",sh[0]));hd.appendChild(mk("div","sub","до "+fmt(sh[2])+" дубл./день"));c.appendChild(hd);
+    const met=normMet(today),rec=depositRecent(today);
+    c.appendChild(mk("div","status "+(met?(rec?"ok":"bad"):""),met?(rec?"В рейсе. Сегодня +"+fmt(sh[2])+".":"Полсилы: нет взноса 7 дней. Сегодня +"+fmt(sh[2]/2)+"."):"Ждёт капитана: закрой норму квестов, и сегодня будет +"+fmt(sh[2]*(rec?1:.5))+"."));
+    c.appendChild(mk("div","sub","Жалованье на вахте ×"+(1+0.15*(cs.k+1)).toFixed(2)));
+    const sb2=mk("button","btn warn","Продать за "+fmt(cs.paid*TRADE));sb2.style.marginTop="8px";sb2.onclick=sellShip;c.appendChild(sb2);ms.appendChild(c)}
+  else ms.appendChild(mk("p","storm","У тебя пока нет корабля. Первый, Шлюпка, стоит 50 дублонов: это две вахты или пара дней квестов."));
+  const yd=$("yard");yd.innerHTML="";
+  SHIPS.forEach((sh,k)=>{if(cs&&cs.k===k)return;
+    const price=Math.ceil(sh[1]*(1-P.discount)),trade=cs?Math.floor(cs.paid*TRADE):0,need=Math.max(0,price-trade),licOk=sav>=sh[3],far=k>(cs?cs.k:-1)+3&&!licOk;
+    const c=mk("div","ship"+(licOk?"":" locked")),a=mk("div","art");a.innerHTML=shipSVG(sh[4]);c.appendChild(a);
+    const hd=mk("div","hd");hd.appendChild(mk("div","nm disp",(k+1)+". "+sh[0]));hd.appendChild(mk("div","sub",fmt(sh[2])+" дубл./день"));c.appendChild(hd);
+    c.appendChild(mk("div","sub","Цена "+fmt(price)+(P.discount?" (со скидкой)":"")+" · патент: казна от "+fmt(sh[3])+" ₽"));
+    if(!licOk)c.appendChild(mk("div","status","Для патента отложи ещё "+fmt(sh[3]-sav)+" ₽."));
+    else{const b=mk("button","btn gold",coins<need?"Не хватает "+fmt(need-coins):cs?"Обменять, доплата "+fmt(need):"Купить за "+fmt(price));b.style.marginTop="8px";b.disabled=coins<need;b.onclick=()=>buyShip(k);c.appendChild(b)}
+    yd.appendChild(c)});
+
+  // вахта
+  $("watchLeft").textContent="осталось "+Math.max(0,WATCHES_PER_DAY-P.watchLog.filter(x=>x.date===today).length)+" из "+WATCHES_PER_DAY;
+  const all=dictAll();$("wTotal").textContent=all.length;$("wLearned").textContent=all.filter(w=>{const s=P.words[w[0]];return s&&s.c>=3&&s.c>s.w*2}).length;
+  $("dictInfo").textContent="Встроено "+WORDS.length+" морских слов, загружено своих: "+P.dict.length+". Файл: список вида [[\"anchor\",\"якорь\"], ...].";
+  if(!W.active)renderWatch();
+
+  // путь
+  const sf=$("statFull");sf.innerHTML="";
+  Object.entries(STATS).forEach(([k,v])=>{const locked=v.lvl>lvl,x=st[k]||0,r=mk("div","statrow");const ic=icon(v.i);ic.style.color=locked?"var(--dim)":v.c;r.appendChild(ic);
+    const n=mk("div","",v.n);n.style.width="110px";r.appendChild(n);const bb2=mk("div","bb"),i=mk("i");i.style.width=(locked?0:(x%200)/2)+"%";i.style.background=v.c;bb2.appendChild(i);r.appendChild(bb2);
+    r.appendChild(mk("div","sub",locked?"с «"+RANKS[v.lvl-1][0]+"»":"ур. "+(Math.floor(x/200)+1)));sf.appendChild(r)});
+  const rl=$("rankList");rl.innerHTML="";
+  RANKS.forEach((r,i)=>{const L=i+1,d=mk("div","rk"+(L<=lvl?" got":"")+(L===lvl?" cur":""));d.appendChild(mk("h3","disp",r[0]+" · "+r[1]+" XP"));
+    const ul=mk("ul");(L===1?unlocksAt(1).concat(["1 слот своего задания"]):unlocksAt(L)).forEach(x=>ul.appendChild(mk("li","",x)));d.appendChild(ul);rl.appendChild(d)});
+  $("parityBtn").textContent="Сейчас: "+(odd?"нечётная":"чётная")+" неделя";
+}
+
+function shipSVG(g){
+  const W=120,wl=56,x0=60-g.len/2,x1=60+g.len/2;let o='<svg viewBox="0 0 120 70" class="rough" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+  o+='<path d="M4 '+(wl+7)+' q6 -3 12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0" opacity=".6"/>';
+  if(g.type){const F='fill="rgba(232,220,196,.08)"',F2='fill="rgba(232,220,196,.14)"';
+    const hull=(x0,x1,top,bot)=>'<path d="M'+x0+' '+top+' L'+(x1+6)+' '+(top-2)+' L'+(x1-5)+' '+bot+' L'+(x0+3)+' '+bot+' Z" '+F+'/>';
+    const win=(xa,xb,y,st)=>{let r='';for(let x=xa;x<=xb;x+=st)r+='<path d="M'+x+' '+y+' h1.6"/>';return r};
+    const t=g.type;
+    if(t==="motor"){o+=hull(42,78,50,59)+'<path d="M52 50 v-6 h11 l5 6"/><path d="M63 44 l3 -3"/><path d="M42 50 v6 h-3"/><path d="M26 61 q6 -1 12 -3" opacity=".5"/>'}
+    if(t==="fishing"){o+=hull(34,86,50,60)+'<path d="M58 50 V38 H72 V50" '+F2+'/>'+win(60,69,42,3)+'<path d="M44 50 V22"/><path d="M44 26 L68 38"/><path d="M44 30 L34 47 M44 30 L50 47" opacity=".7"/><path d="M36 42 h12 M37 38 h9" opacity=".5" stroke-dasharray="1.5 1.5"/><path d="M74 50 v-8 h4 v8"/>'}
+    if(t==="yacht"){o+='<path d="M34 51 L92 49 L84 58 L37 58 Z" '+F+'/><path d="M60 50 V9"/><path d="M59 12 V48 H38 Z" '+F2+'/><path d="M61 13 L88 48 H62 Z" '+F2+'/><path d="M44 51 h10" opacity=".6"/>'}
+    if(t==="tug"){o+='<path d="M36 48 L90 44 L80 60 L39 60 Z" '+F+'/><path d="M50 48 V36 H64 V48" '+F2+'/><path d="M48 36 H66"/>'+win(52,61,40,3)+'<path d="M68 47 V30 H75 V47"/><path d="M68 33 H75" stroke="#c9a45c"/><path d="M57 36 V28"/>';for(let x=42;x<=80;x+=8)o+='<circle cx="'+x+'" cy="53" r="1.6"/>'}
+    if(t==="ferry"){o+=hull(12,104,50,60)+'<path d="M18 50 V40 H96 V48" '+F+'/><path d="M24 40 V32 H86 V40" '+F+'/><path d="M70 32 V26 H84 V32" '+F2+'/>'+win(22,92,45,5)+win(28,82,36,5)+win(72,80,29,3)+'<path d="M48 32 V22 H56 V32"/><path d="M48 25 H56" stroke="#c9a45c"/>'}
+    if(t==="bulk"){o+=hull(10,106,50,60)+'<path d="M14 50 V30 H30 V50" '+F2+'/>'+win(16,26,34,3.5)+win(16,26,38,3.5)+win(16,26,42,3.5)+'<path d="M18 30 V22 H26 V30"/>';for(let x=38;x<=92;x+=15)o+='<path d="M'+x+' 50 v-3 h11 v3"/>';for(let x=51;x<=81;x+=15)o+='<path d="M'+x+' 47 V32"/><path d="M'+x+' 33 L'+(x+9)+' 41"/>'}
+    if(t==="container"){o+=hull(10,106,50,60)+'<path d="M14 50 V26 H28 V50" '+F2+'/>'+win(16,25,30,3)+win(16,25,34,3)+'<path d="M30 50 V32 H35 V50"/>';const hs=[3,3,2,3,3,2,3,3,3,2,3];hs.forEach((n,i)=>{const x=38+i*6;for(let r=0;r<n;r++)o+='<rect x="'+x+'" y="'+(46-r*4)+'" width="5" height="4" '+(((i+r)%3===0)?F2:'')+'/>'})}
+    if(t==="tanker"){o+=hull(10,106,50,60)+'<path d="M14 50 V28 H30 V50" '+F2+'/>'+win(16,26,32,3.5)+win(16,26,36,3.5)+win(16,26,40,3.5)+'<path d="M20 28 V20 H27 V28"/><path d="M20 22 H27" stroke="#c9a45c"/><path d="M34 47.5 H102"/><path d="M34 45.5 H102" opacity=".45"/><path d="M66 47 V39 L75 41"/><path d="M98 48 V38"/><path d="M44 50 v-2.5 M54 50 v-2.5 M78 50 v-2.5 M88 50 v-2.5" opacity=".6"/>'}
+    if(t==="cruise"){o+='<path d="M10 50 L112 48 Q110 57 100 60 L13 60 Z" '+F+'/><path d="M14 50 V42 H102 V49" '+F+'/><path d="M18 42 V34 H96 V42" '+F+'/><path d="M24 34 V27 H88 V34" '+F+'/><path d="M30 27 V21 H76 V27" '+F2+'/>';for(const [y,a,b] of [[54,18,98],[46,18,98],[38,22,92],[30.5,28,84],[24,34,72]])for(let x=a;x<=b;x+=4)o+='<circle cx="'+x+'" cy="'+y+'" r=".7"/>';o+='<path d="M58 21 V12 H67 V21"/><path d="M58 15 H67" stroke="#c9a45c"/>'}
+    if(t==="superyacht"){o+='<path d="M24 50 L104 47 L94 58 L27 58 Z" '+F+'/><path d="M30 50 L34 42 H86 L92 49" '+F+'/><path d="M38 42 L42 35 H76 L80 42" '+F+'/><path d="M48 35 L52 29 H68 L70 35" '+F2+'/><path d="M40 46 H84" stroke-width="2.4" opacity=".5"/><path d="M46 38.5 H74" stroke-width="2.2" opacity=".5"/><path d="M56 29 q4 -8 8 0"/><path d="M60 25 V19"/><path d="M28 55 h60" opacity=".35"/>'}
+    return o+'</svg>'}
+  if(g.flag){
+    const G='stroke="#c9a45c"';
+    o+='<path d="M4 63 q5 -2 10 0" opacity=".4"/><path d="M104 60 q6 -1 12 -8" opacity=".6"/><path d="M100 62 q8 0 14 -5" opacity=".4"/>';
+    o+='<path d="M6 47 L11 59 L99 59 Q109 57 116 44 L6 47 Z" fill="rgba(232,220,196,.10)"/>';
+    o+='<path d="M10 55 L106 55" opacity=".6"/><path d="M14 57 L103 57" opacity=".3"/>';
+    for(let x=18;x<=96;x+=7)o+='<circle cx="'+x+'" cy="51" r=".8"/>';
+    o+='<path d="M28 46 V38 H74 V45" fill="rgba(232,220,196,.06)"/><path d="M34 38 V31 H66 V38" fill="rgba(232,220,196,.06)"/><path d="M40 31 V25 H56 V31" fill="rgba(232,220,196,.10)"/>';
+    for(let x=42;x<=52;x+=3.3)o+='<path d="M'+x+' 28 h1.6"/>';
+    for(let x=36;x<=62;x+=4)o+='<path d="M'+x+' 34.5 h1.8" opacity=".7"/>';
+    o+='<path d="M48 25 V7"/><path d="M43 13 H53"/><path d="M45 17.5 H51"/><ellipse cx="48" cy="10" rx="3.4" ry="1.3"/><path d="M48 7 V3"/><path d="M53 13 l3 -2" opacity=".6"/>';
+    o+='<path d="M63 38 L65.5 26 H73 L71.5 38 Z" fill="rgba(232,220,196,.08)"/><path d="M65.2 28.5 H72.6" '+G+'/><circle cx="71" cy="21.5" r="2" opacity=".35"/><circle cx="75.5" cy="17.5" r="2.8" opacity=".25"/><circle cx="81" cy="13.5" r="3.4" opacity=".15"/>';
+    o+='<path d="M82 45 v-3.5 a4.5 3.2 0 0 1 9 0 V45"/><path d="M91 40.8 L102 38.6"/><path d="M91 42.6 L102 40.4"/>';
+    o+='<path d="M16 46.5 v-3.5 a4.5 3.2 0 0 1 9 0 v3.5"/><path d="M16 42.4 L11 41.4"/>';
+    o+='<path d="M104 47.5 v3.5 M102 50 q2 2.4 4 0" opacity=".8"/>';
+    o+='<path d="M8 47 V32"/><path d="M8 32 L17 34.5 L8 37.5 Z" fill="#c9a45c" '+G+'/>';
+    return o+'</svg>';
+  }
+  if(g.modern){
+    o+='<path d="M'+x0+' '+(wl-8)+' L'+(x1+6)+' '+(wl-10)+' L'+(x1-6)+' '+(wl+4)+' L'+(x0+4)+' '+(wl+4)+' Z" fill="rgba(232,220,196,.08)"/>';
+    o+='<path d="M'+(x0+12)+' '+(wl-8)+' v-12 h'+(g.len*0.42)+' v12"/><path d="M'+(x0+16)+' '+(wl-20)+' v-7 h'+(g.len*0.26)+' v7"/>';
+    for(let i=0;i<5;i++)o+='<path d="M'+(x0+18+i*6)+' '+(wl-15)+' h3"/>';
+    for(let i=0;i<(g.stacks||1);i++){const sx=x0+g.len*0.62+i*11;o+='<path d="M'+sx+' '+(wl-8)+' v-18 h7 v18"/><path d="M'+sx+' '+(wl-22)+' h7"/>'}
+    if(g.flag)o+='<path d="M'+(x0+14)+' '+(wl-27)+' v-12 l9 3 -9 3"/>';
+    o+='<path d="M'+(x1-2)+' '+(wl-2)+' l-10 0" opacity=".5"/>';
+    return o+'</svg>';
+  }
+  o+='<path d="M'+x0+' '+(wl-6)+' L'+(x1+6)+' '+(wl-8)+' L'+(x1-5)+' '+(wl+4)+' L'+(x0+3)+' '+(wl+4)+' Z" fill="rgba(232,220,196,.08)"/>';
+  if(g.stern)o+='<path d="M'+x0+' '+(wl-6)+' v-8 h14 v8"/>';
+  if(g.guns)for(let r=0;r<g.guns;r++)for(let x=x0+16;x<x1-6;x+=7)o+='<circle cx="'+x+'" cy="'+(wl-2+r*3.5-(g.guns>1?2:0))+'" r=".9"/>';
+  if(!g.masts){for(let i=0;i<3;i++){const x=x0+8+i*8;o+='<path d="M'+x+' '+(wl-4)+' l-5 12"/>'}o+='<circle cx="'+(x0+g.len*0.7)+'" cy="'+(wl-10)+'" r="3"/>';return o+'</svg>'}
+  const n=g.masts;
+  for(let m=0;m<n;m++){
+    const mx=n===1?60:x0+14+m*((g.len-24)/(n-1)),top=wl-6-g.h;
+    o+='<path d="M'+mx+' '+(wl-6)+' V'+top+'"/>';
+    const sq=g.mixed&&m===n-1?0:g.sq;
+    if(!sq){o+='<path d="M'+(mx+1)+' '+(top+3)+' L'+(mx+1)+' '+(wl-9)+' L'+(mx+16)+' '+(wl-9)+' Z" fill="rgba(232,220,196,.12)"/>'}
+    else{const hh=(g.h-6)/sq;for(let k=0;k<sq;k++){const y=top+3+k*hh,wd=9+k*2.2;o+='<path d="M'+(mx-wd)+' '+y+' Q'+mx+' '+(y+2)+' '+(mx+wd)+' '+y+' L'+(mx+wd-1)+' '+(y+hh-1.5)+' Q'+mx+' '+(y+hh+1)+' '+(mx-wd+1)+' '+(y+hh-1.5)+' Z" fill="rgba(232,220,196,.12)"/>'}}
+    if(m===0&&n>1)o+='<path d="M'+(x1+6)+' '+(wl-8)+' L'+mx+' '+(top+2)+'"/>';
+  }
+  if(n===1)o+='<path d="M'+(x1+6)+' '+(wl-8)+' L60 '+(wl-6-g.h+2)+'"/>';
+  o+='<path d="M'+(n===1?60:x0+14)+' '+(wl-6-g.h)+' v-5 l6 2 -6 2"/>';
+  return o+'</svg>';
+}
+function deposit(sign){const sav=savings();
+  const raw=prompt(sign>0?"Сколько рублей ты реально отложил в казну?":"Сколько рублей ты снял из казны?\nСейчас в казне: "+fmt(sav)+" ₽");
+  if(raw===null)return;const n=Math.round(Number(String(raw).replace(/[^0-9.,]/g,"").replace(",",".")));
+  if(!n||n<=0){toast("Нужно число больше нуля.");return}
+  const amt=sign>0?n:-Math.min(n,sav);P.deposits.push({date:dkey(new Date()),amt});save();render();
+  toast(sign>0?"+"+fmt(amt)+" ₽ в казне. Корабль идёт на полной силе.":"Снято "+fmt(-amt)+" ₽. Честный учёт — тоже дисциплина.")}
+function buyShip(k){const today=dkey(new Date()),sh=SHIPS[k],cur=P.ship,price=Math.ceil(sh[1]*(1-P.discount)),trade=cur?Math.floor(cur.paid*TRADE):0;
+  if(!confirm(cur?"Сдать «"+SHIPS[cur.k][0]+"» за "+fmt(trade)+" и купить «"+sh[0]+"» за "+fmt(price)+"?":"Купить «"+sh[0]+"» за "+fmt(price)+"?"))return;
+  if(cur){P.shipHist.forEach(h=>{if(!h.to)h.to=today});P.shipTx.push({date:today,amt:trade})}
+  P.shipTx.push({date:today,amt:-price});P.ship={k,at:today,paid:price};P.shipHist.push({k,from:today,to:null});P.discount=0;save();render();window.scrollTo(0,0);
+  toast("«"+sh[0]+"» теперь твой. Попутного ветра, капитан!")}
+function sellShip(){const cur=P.ship;if(!cur)return;const today=dkey(new Date()),ref=Math.floor(cur.paid*TRADE);
+  if(!confirm("Продать «"+SHIPS[cur.k][0]+"» за "+fmt(ref)+"? Доход прекратится."))return;
+  P.shipHist.forEach(h=>{if(!h.to)h.to=today});P.shipTx.push({date:today,amt:ref});P.ship=null;save();render()}
+function openChest(ci){const ch=CHESTS[ci],today=dkey(new Date());if(calc().coins<ch.c)return;
+  let r=Math.random()*100,row=ch.t[0];for(const x of ch.t){if(r<x[0]){row=x;break}r-=x[0]}
+  const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1)),rec={date:today,cost:ch.c,n:ch.n};let msg;
+  if(row[1]==="c"){rec.coins=rnd(row[2],row[3]);msg=(rec.coins>=ch.c*4?"Клад! ":"")+"+"+fmt(rec.coins)+" дублонов"}
+  else if(row[1]==="x"){rec.xp=rnd(row[2],row[3]);msg="Старый судовой журнал: +"+rec.xp+" XP"}
+  else if(row[1]==="coupon"){const it=SHOP[rnd(0,3)][0];P.spent.push({t:"Из сундука: "+it,cost:0,date:today});msg="Купон: «"+it+"». Бесплатно, пользуйся"}
+  else if(row[1]==="off"){P.extraOff++;msg="Запасная увольнительная"}
+  else{P.discount=Math.max(P.discount,row[2]/100);msg="Карта сокровищ: скидка "+row[2]+"% на следующий корабль"}
+  P.chests.push(rec);save();
+  const card=$("chest"+ci);if(card){card.classList.remove("shake");void card.offsetWidth;card.classList.add("shake")}
+  setTimeout(()=>{render();const lb=$("lootBox");lb.textContent=ch.n+": "+msg+".";lb.classList.remove("hidden")},600)}
+
+// ===== вахта
+const W={active:false,qs:[],i:0,right:0,answered:false};
+function dictAll(){const m=new Map();WORDS.concat(P.dict||[]).forEach(w=>{if(w&&w[0]&&w[1]&&!m.has(w[0]))m.set(w[0],w)});return [...m.values()]}
+function pickWeighted(arr){const ws=arr.map(w=>{const s=P.words[w[0]]||{c:0,w:0};return 3/(1+s.c)+s.w*1.5+.2});let t=ws.reduce((a,b)=>a+b,0),r=Math.random()*t;for(let i=0;i<arr.length;i++){r-=ws[i];if(r<=0)return arr[i]}return arr[arr.length-1]}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function makeQ(used){const all=dictAll(),byEn=new Map(all.map(w=>[w[0],w]));
+  const defs=DEFS.filter(d=>byEn.has(d[1])&&!used.has(d[1]));
+  if(defs.length&&Math.random()<0.25){const d=defs[Math.floor(Math.random()*defs.length)];used.add(d[1]);
+    const opts=shuffle(all.filter(w=>w[0]!==d[1])).slice(0,3).map(w=>w[0]);return {key:d[1],prompt:d[0],hint:"Какое это слово?",ans:d[1],opts:shuffle(opts.concat([d[1]]))}}
+  let w,tries=0;do{w=pickWeighted(all);tries++}while(used.has(w[0])&&tries<30);used.add(w[0]);
+  const others=shuffle(all.filter(x=>x[0]!==w[0])).slice(0,3);
+  if(Math.random()<0.5)return {key:w[0],prompt:w[0],hint:"Как переводится?",ans:w[1],opts:shuffle(others.map(x=>x[1]).concat([w[1]]))};
+  return {key:w[0],prompt:w[1],hint:"Как это по-английски?",ans:w[0],opts:shuffle(others.map(x=>x[0]).concat([w[0]]))}}
+function startWatch(){const today=dkey(new Date());if(P.watchLog.filter(x=>x.date===today).length>=WATCHES_PER_DAY)return;
+  const used=new Set();W.qs=[];for(let i=0;i<WATCH_Q;i++)W.qs.push(makeQ(used));W.i=0;W.right=0;W.answered=false;W.active=true;renderWatch()}
+function renderWatch(){const a=$("watchArea");a.innerHTML="";const today=dkey(new Date());
+  if(!W.active){const left=WATCHES_PER_DAY-P.watchLog.filter(x=>x.date===today).length;
+    const last=P.watchLog.filter(x=>x.date===today).slice(-1)[0];
+    if(last){const p=mk("p","loot","Последняя вахта: "+last.right+" из "+WATCH_Q+", +"+last.coins+" дублонов, +"+last.xp+" XP.");a.appendChild(p)}
+    const b=mk("button","btn gold",left>0?"Заступить на вахту":"На сегодня вахты отстояны");b.disabled=left<=0;b.style.width="100%";b.onclick=startWatch;a.appendChild(b);return}
+  const q=W.qs[W.i],card=mk("div","qcard");card.appendChild(mk("div","sub","Вопрос "+(W.i+1)+" из "+WATCH_Q+" · верно "+W.right));
+  card.appendChild(mk("div","qp disp",q.prompt));card.appendChild(mk("div","sub",q.hint));a.appendChild(card);
+  q.opts.forEach(o=>{const b=mk("button","opt",o);b.onclick=()=>answer(o,b);a.appendChild(b)});
+  const nx=mk("button","btn gold hidden",W.i+1<WATCH_Q?"Дальше":"Сдать вахту");nx.id="wNext";nx.style.width="100%";nx.onclick=()=>{W.i++;W.answered=false;if(W.i>=WATCH_Q)finishWatch();else renderWatch()};a.appendChild(nx)}
+function answer(o,btn){if(W.answered)return;W.answered=true;const q=W.qs[W.i],ok=o===q.ans,s=P.words[q.key]||(P.words[q.key]={c:0,w:0});
+  if(ok){W.right++;s.c++}else s.w++;
+  document.querySelectorAll("#watchArea .opt").forEach(b=>{if(b.textContent===q.ans)b.classList.add("right");else if(b===btn)b.classList.add("wrong")});
+  if(navigator.vibrate)navigator.vibrate(ok?12:[20,40,20]);$("wNext").classList.remove("hidden");save()}
+function finishWatch(){const today=dkey(new Date()),cur=P.ship,mult=cur?1+0.15*(cur.k+1):1;
+  const coins=Math.round((W.right*3+(W.right>=8?10:0))*mult),xp=W.right;
+  P.watchLog.push({date:today,right:W.right,coins,xp});W.active=false;save();render();
+  toast("Вахта сдана: "+W.right+" из "+WATCH_Q+". +"+coins+" дублонов, +"+xp+" XP")}
+function toggle(id,xp,s){const t=dkey(new Date()),a=P.days[t]||(P.days[t]=[]),r=P.dxp[t]||(P.dxp[t]={}),i=a.indexOf(id);
+  if(i>=0){a.splice(i,1);delete r[id];if(!String(id).startsWith("c_"))P.custom.forEach(c=>{const j=a.indexOf(c.id);if(j>=0){a.splice(j,1);delete r[c.id]}})}
+  else{a.push(id);r[id]={xp,s};if(navigator.vibrate)navigator.vibrate(12)}
+  save();render()}
+$("customAdd").onclick=()=>{const t=$("customText").value.trim();if(!t||P.custom.length>=CUSTOM_SLOTS(curLvl))return;
+  P.custom.push({id:"c_"+Date.now().toString(36),t,s:$("customStat").value||"duh"});$("customText").value="";save();render()};
+$("noteBox").addEventListener("input",e=>{const t=dkey(new Date());P.notes[t]=e.target.value;
+  if(curLvl>=3){const a=P.days[t]||(P.days[t]=[]),r=P.dxp[t]||(P.dxp[t]={}),has=a.includes("win");
+    if(e.target.value.trim()&&!has){a.push("win");r.win={xp:10,s:"duh"}}if(!e.target.value.trim()&&has){a.splice(a.indexOf("win"),1);delete r.win}}
+  save();clearTimeout(render.h);render.h=setTimeout(render,600)});
+$("parityBtn").onclick=()=>{const w=weekIdx(new Date()),odd=((w-P.parityRef.w)%2===0)===P.parityRef.odd;P.parityRef={w,odd:!odd};save();render()};
+$("depBtn").onclick=()=>deposit(1);$("wdBtn").onclick=()=>deposit(-1);
+$("pathBtn").onclick=()=>go("path");
+$("dictBtn").onclick=()=>$("dictFile").click();
+$("dictFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result);
+  if(!Array.isArray(d))throw 0;d=d.map(x=>Array.isArray(x)?[String(x[0]).trim(),String(x[1]).trim()]:[String(x.en||x.word||"").trim(),String(x.ru||x.translation||"").trim()]).filter(x=>x[0]&&x[1]);
+  if(!d.length)throw 0;P.dict=d;save();render();toast("Загружено слов: "+d.length)}catch(err){toast("Не получилось прочитать словарь. Нужен JSON-список пар.")}};r.readAsText(f);e.target.value=""};
+$("resetBtn").onclick=()=>{if(!confirm("Стереть весь прогресс? Это нельзя отменить."))return;if(!confirm("Точно? Звание, серии и дублоны пропадут."))return;P=fresh();norm();save();lastLvl=null;render();go("today");toast("Новый старт. День 1.")};
+$("exportBtn").onclick=async()=>{const data=JSON.stringify(P),name="zhurnal-"+dkey(new Date())+".json";
+  try{const f=new File([data],name,{type:"application/json"});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:"Судовой журнал: копия"});return}}catch(e){if(e&&e.name==="AbortError")return}
+  showBk(true,data)};
+function showBk(exp,data){$("bkBox").classList.remove("hidden");$("bkText").value=exp?data:"";
+  $("bkHint").textContent=exp?"Скопируй весь текст ниже и сохрани его в Заметках. Это и есть копия прогресса.":"Вставь сюда текст копии из Заметок и нажми «Восстановить из текста».";
+  $("bkCopy").classList.toggle("hidden",!exp);if(exp){$("bkText").focus();$("bkText").select()}}
+$("pasteBtn").onclick=()=>showBk(false);
+$("bkCopy").onclick=async()=>{const t=$("bkText");t.select();try{await navigator.clipboard.writeText(t.value);toast("Скопировано. Вставь в Заметки.")}catch(e){try{document.execCommand("copy");toast("Скопировано. Вставь в Заметки.")}catch(e2){toast("Выдели текст и скопируй вручную.")}}};
+$("bkRestore").onclick=()=>{try{const d=JSON.parse($("bkText").value);if(!d||!d.days||!d.start)throw 0;if(!confirm("Заменить текущий прогресс этой копией?"))return;P=d;norm();save();lastLvl=null;render();$("bkBox").classList.add("hidden");toast("Прогресс восстановлен.")}catch(e){toast("Это не текст копии журнала.")}};
+$("importBtn").onclick=()=>$("importFile").click();
+$("importFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||!d.days||!d.start)throw 0;
+  if(!confirm("Заменить текущий прогресс копией от "+(Object.keys(d.days).sort().pop()||d.start)+"?"))return;P=d;norm();save();lastLvl=null;render();toast("Прогресс восстановлен.")}catch(err){toast("Это не файл копии журнала.")}};r.readAsText(f);e.target.value=""};
+
+function go(tab){document.querySelectorAll("nav button").forEach(x=>x.setAttribute("aria-selected",x.dataset.tab===tab?"true":"false"));
+  document.querySelectorAll("section").forEach(s=>s.classList.toggle("hidden",s.id!=="tab-"+tab));window.scrollTo(0,0)}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>go(b.dataset.tab));
+
+render();
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)render()});
+setInterval(()=>{const a=document.activeElement;if(!a||(a.id!=="noteBox"&&a.id!=="customText"))render()},60000);
+if("serviceWorker" in navigator&&location.protocol==="https:"&&!/claude\.ai$|claudeusercontent|anthropic/.test(location.hostname)){navigator.serviceWorker.register("sw.js").catch(()=>{})}
+</script>
+</body>
+</html>
